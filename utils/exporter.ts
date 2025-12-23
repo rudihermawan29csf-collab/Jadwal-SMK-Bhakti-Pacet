@@ -59,7 +59,7 @@ const getRGBFromTailwind = (twClass?: string): [number, number, number] => {
 export const exportSchedulePDF = (schedule: WeeklySchedule, teachers: Teacher[], size: 'A4' | 'F4') => {
     const doc = new jsPDF({ orientation: 'portrait', format: size === 'F4' ? PAGE_SIZE_F4 : PAGE_SIZE_A4, unit: 'mm' });
     doc.setFontSize(16);
-    doc.text("JADWAL PELAJARAN SMPN 3 PACET", 105, 12, { align: 'center' });
+    doc.text("JADWAL PELAJARAN SMK BHAKTI PACET", 105, 12, { align: 'center' });
     doc.setFontSize(10);
     doc.text("Semester Genap - Tahun Pelajaran 2025/2026", 105, 18, { align: 'center' });
     let startY = 25;
@@ -92,12 +92,12 @@ export const exportSchedulePDF = (schedule: WeeklySchedule, teachers: Teacher[],
         // @ts-ignore
         startY = doc.lastAutoTable.finalY + 10;
     });
-    doc.save(`Jadwal_Lengkap_SMPN_3_Pacet_${getFormattedDate()}.pdf`);
+    doc.save(`Jadwal_Lengkap_SMK_Bhakti_Pacet_${getFormattedDate()}.pdf`);
 };
 
 export const exportScheduleExcel = (schedule: WeeklySchedule) => {
     const wb = XLSX.utils.book_new();
-    const ws_data: any[][] = [["JADWAL PELAJARAN SMPN 3 PACET"], ["TAHUN PELAJARAN 2025/2026"], [], ["HARI", "KE", "WAKTU", ...CLASSES]];
+    const ws_data: any[][] = [["JADWAL PELAJARAN SMK BHAKTI PACET"], ["TAHUN PELAJARAN 2025/2026"], [], ["HARI", "KE", "WAKTU", ...CLASSES]];
     TIME_STRUCTURE.forEach(day => {
         day.slots.forEach(slot => {
             const row: any[] = [day.day, slot.period < 0 ? '' : slot.period, `${slot.start}-${slot.end}`];
@@ -116,22 +116,22 @@ export const exportScheduleExcel = (schedule: WeeklySchedule) => {
     });
     const ws = XLSX.utils.aoa_to_sheet(ws_data);
     XLSX.utils.book_append_sheet(wb, ws, "Jadwal");
-    XLSX.writeFile(wb, `Jadwal_Excel_SMPN_3_Pacet_${getFormattedDate()}.xlsx`);
+    XLSX.writeFile(wb, `Jadwal_Excel_SMK_Bhakti_Pacet_${getFormattedDate()}.xlsx`);
 };
 
 export const exportDutiesPDF = (teachers: Teacher[], size: 'A4' | 'F4') => {
     const doc = new jsPDF({ orientation: 'landscape', format: size === 'F4' ? PAGE_SIZE_F4 : PAGE_SIZE_A4, unit: 'mm' });
-    doc.setFontSize(16); doc.text("PEMBAGIAN TUGAS GURU SMPN 3 PACET", 14, 15);
+    doc.setFontSize(16); doc.text("PEMBAGIAN TUGAS GURU SMK BHAKTI PACET", 14, 15);
     autoTable(doc, { startY: 25, head: [['No', 'Nama Guru', 'NIP', 'Kode', 'Mapel', ...CLASSES, 'Total']], body: teachers.flatMap((t, i) => t.subjects.map(s => [i+1, t.name, t.nip, t.code, s.subject, ...CLASSES.map(c => s.load[c] || ''), Object.values(s.load).reduce((a:any, b:any) => a+b, 0)])), theme: 'grid', headStyles: { fillColor: [0, 50, 100], fontSize: 9 } });
-    doc.save(`Tugas_Guru_SMPN_3_Pacet_${getFormattedDate()}.pdf`);
+    doc.save(`Tugas_Guru_SMK_Bhakti_Pacet_${getFormattedDate()}.pdf`);
 };
 
 export const exportDutiesExcel = (teachers: Teacher[]) => {
     const headers = ["No", "Nama Guru", "NIP", "Kode", "Mapel", ...CLASSES, "Total"];
     const body = teachers.flatMap((t, i) => t.subjects.map(s => [i+1, t.name, t.nip, t.code, s.subject, ...CLASSES.map(c => s.load[c] || ''), Object.values(s.load).reduce((a:any, b:any) => a+b, 0)]));
-    const ws = XLSX.utils.aoa_to_sheet([["PEMBAGIAN TUGAS GURU SMPN 3 PACET"], [], headers, ...body]);
+    const ws = XLSX.utils.aoa_to_sheet([["PEMBAGIAN TUGAS GURU SMK BHAKTI PACET"], [], headers, ...body]);
     const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Tugas");
-    XLSX.writeFile(wb, `Tugas_Guru_SMPN_3_Pacet_${getFormattedDate()}.xlsx`);
+    XLSX.writeFile(wb, `Tugas_Guru_SMK_Bhakti_Pacet_${getFormattedDate()}.xlsx`);
 };
 
 // --- EKSPOR PDF SPESIFIK PER KELAS ---
@@ -140,7 +140,7 @@ export const exportSpecificClassPDF = (schedule: WeeklySchedule, className: stri
     doc.setFontSize(16); doc.setFont("helvetica", "bold");
     doc.text(`JADWAL PELAJARAN KELAS ${className}`, 105, 12, { align: 'center' });
     doc.setFontSize(10); doc.setFont("helvetica", "normal");
-    doc.text("SMPN 3 PACET - TA 2025/2026", 105, 18, { align: 'center' });
+    doc.text("SMK BHAKTI PACET - TA 2025/2026", 105, 18, { align: 'center' });
 
     const days = TIME_STRUCTURE.map(d => d.day);
     const allPeriods = Array.from(new Set(TIME_STRUCTURE.flatMap(d => d.slots.map(s => s.period)))).sort((a, b) => a - b);
@@ -233,7 +233,7 @@ export const exportSpecificTeacherPDF = (schedule: WeeklySchedule, teacher: Teac
     doc.setFontSize(14); doc.setFont("helvetica", "bold");
     doc.text(`JADWAL MENGAJAR: ${teacher.name}`, 105, 12, { align: 'center' });
     doc.setFontSize(10); doc.setFont("helvetica", "normal");
-    doc.text("SMPN 3 PACET - TA 2025/2026", 105, 18, { align: 'center' });
+    doc.text("SMK BHAKTI PACET - TA 2025/2026", 105, 18, { align: 'center' });
     
     const days = TIME_STRUCTURE.map(d => d.day);
     const allPeriods = Array.from(new Set(TIME_STRUCTURE.flatMap(d => d.slots.map(s => s.period)))).sort((a, b) => a - b);

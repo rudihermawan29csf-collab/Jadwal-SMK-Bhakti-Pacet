@@ -13,13 +13,12 @@ import { exportDutiesExcel, exportDutiesPDF, exportScheduleExcel, exportSchedule
 
 type Tab = 'SCHEDULE' | 'PER_CLASS_TEACHER' | 'EDIT_MANUAL' | 'DUTIES' | 'OFF_CODES' | 'JP_DIST';
 
-const STORAGE_KEY = 'SMPN3_PACET_DATA_V1';
+const STORAGE_KEY = 'SMK_BHAKTI_PACET_DATA_V1';
 const LOGO_URL = "https://iili.io/fE4CthG.png";
 const LOGIN_BG_URL = "https://scontent.fsub2-2.fna.fbcdn.net/v/t39.30808-6/481243967_1132369265566430_2047520136138959486_n.jpg?stp=dst-jpg_s960x960_tt6&_nc_cat=102&ccb=1-7&_nc_sid=cc71e4&_nc_ohc=XpI9K8L9024Q7kNvwHZ01Zn&_nc_oc=AdmLx0g_v3DetsCrcvE0bn5BVgR4IsEMCv1P43NwT3aP6B1UJmVTeyF7pLCWijd_UlMQyn3IE4zlPUu0dYv2PXsH&_nc_zt=23&_nc_ht=scontent.fsub2-2.fna&_nc_gid=DC7Pqmrn8_Dnp7iSwc77hQ&oh=00_Afn0d45zoZasyPFNu7wFScX-czBopyGzb1c2TCcOP_yXaQ&oe=69503860";
 
 /**
- * URL Google Script yang sudah diperbarui.
- * Gunakan tipe 'string' secara eksplisit untuk menghindari error TS2367.
+ * URL Google Script. Menggunakan tipe string eksplisit.
  */
 const GOOGLE_SCRIPT_URL: string = "https://script.google.com/macros/s/AKfycbxAqoNfK_oWuS8qh2DH61E6OLetk3bN2FYnkCLsnG9PeBKVhZaHi32H0p77mmuoLUngIw/exec";
 
@@ -66,7 +65,8 @@ const App: React.FC = () => {
 
   // Fungsi pengecekan yang aman dari error TS2367
   const isUrlConfigured = () => {
-    return GOOGLE_SCRIPT_URL && GOOGLE_SCRIPT_URL.includes("script.google.com");
+    const url = GOOGLE_SCRIPT_URL as string;
+    return url && url.includes("script.google.com");
   };
 
   // Sync Logic
@@ -287,7 +287,7 @@ const App: React.FC = () => {
                       <div className="bg-white p-3 rounded-3xl shadow-lg mb-4 ring-4 ring-blue-800/50">
                         <img src={LOGO_URL} alt="Logo" className="h-20 w-auto drop-shadow-md" />
                       </div>
-                      <h2 className="text-white text-2xl font-black uppercase tracking-[0.2em]">SMPN 3 PACET</h2>
+                      <h2 className="text-white text-2xl font-black uppercase tracking-[0.2em]">SMK BHAKTI PACET</h2>
                       <div className="h-0.5 w-16 bg-blue-400 mt-2 mb-1"></div>
                       <p className="text-blue-200 text-[10px] font-black mt-1 tracking-[0.3em] uppercase opacity-80">Automated Scheduler</p>
                   </div>
@@ -356,7 +356,7 @@ const App: React.FC = () => {
                   
                   <div className="bg-gray-50 py-4 px-8 border-t border-gray-100 text-center">
                     <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest leading-relaxed">
-                        &copy; 2025 SMPN 3 PACET <br/> 
+                        &copy; 2025 SMK BHAKTI PACET <br/> 
                         <span className="opacity-60 italic font-normal lowercase tracking-tight">Kreativitas & Integritas Menuju Masa Depan</span>
                     </p>
                   </div>
@@ -381,7 +381,7 @@ const App: React.FC = () => {
                     <img src={LOGO_URL} alt="Logo" className="h-16 w-auto object-contain" />
                 </div>
                 <div>
-                    <h1 className="text-xl md:text-2xl font-black flex items-center gap-2 uppercase tracking-tight">SMPN 3 PACET</h1>
+                    <h1 className="text-xl md:text-2xl font-black flex items-center gap-2 uppercase tracking-tight">SMK BHAKTI PACET</h1>
                     <div className="flex gap-4 mt-0.5">
                         <div className="flex items-center gap-1">
                             <span className="text-[10px] text-blue-300 font-bold uppercase">TA:</span>
@@ -521,7 +521,7 @@ const App: React.FC = () => {
                         <div className="flex justify-center items-center gap-6 mb-2">
                             <img src={LOGO_URL} className="h-20 w-auto" alt="Logo" />
                             <div className="text-center">
-                                <h1 className="text-2xl font-bold uppercase">JADWAL PELAJARAN SMPN 3 PACET</h1>
+                                <h1 className="text-2xl font-bold uppercase">JADWAL PELAJARAN SMK BHAKTI PACET</h1>
                                 <h2 className="text-lg font-bold">TAHUN PELAJARAN {settings.academicYear} - SEMESTER {settings.semester.toUpperCase()}</h2>
                             </div>
                         </div>
@@ -537,7 +537,7 @@ const App: React.FC = () => {
         {activeTab === 'OFF_CODES' && <OffCodeManager teachers={teachers} constraints={offConstraints} onChange={setOffConstraints} />}
         {activeTab === 'JP_DIST' && <JPDistributionTable settings={jpSplitSettings} onUpdate={(code, opts) => setJpSplitSettings(prev => ({...prev, [code]: opts}))} />}
       </main>
-      <footer className="bg-white border-t p-4 mt-auto no-print text-center text-[10px] text-gray-400 font-bold tracking-widest uppercase">&copy; 2025 SMPN 3 PACET - AUTOMATED SCHEDULER</footer>
+      <footer className="bg-white border-t p-4 mt-auto no-print text-center text-[10px] text-gray-400 font-bold tracking-widest uppercase">&copy; 2025 SMK BHAKTI PACET - AUTOMATED SCHEDULER</footer>
     </div>
   );
 };
