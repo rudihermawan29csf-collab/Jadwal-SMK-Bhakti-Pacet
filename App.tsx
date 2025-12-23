@@ -19,8 +19,9 @@ const LOGIN_BG_URL = "https://scontent.fsub2-2.fna.fbcdn.net/v/t39.30808-6/48124
 
 /**
  * URL Google Script yang sudah diperbarui.
+ * Gunakan tipe 'string' secara eksplisit untuk menghindari error TS2367.
  */
-const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxAqoNfK_oWuS8qh2DH61E6OLetk3bN2FYnkCLsnG9PeBKVhZaHi32H0p77mmuoLUngIw/exec";
+const GOOGLE_SCRIPT_URL: string = "https://script.google.com/macros/s/AKfycbxAqoNfK_oWuS8qh2DH61E6OLetk3bN2FYnkCLsnG9PeBKVhZaHi32H0p77mmuoLUngIw/exec";
 
 const DEFAULT_JP_SETTINGS: JPSplitConstraints = {
     'C4': ['2+2'], 'D3': ['3'], 'E1': ['3'], 'F20': ['4+3', '3+2'], 'F21': ['4+2'], 'F24': ['5'], 'G10': ['2+2'], 'I6': ['2+2'], 'J6': ['2+2'], 'K12': ['2'], 'K5': ['2'], 'L11': ['4+4', '4+3'], 'M16': ['2'], 'M27': ['1'], 'M28': ['1'], 'M33': ['4+4+2'], 'M36': ['4+4+2'], 'M38': ['4+4+2'], 'N11': ['3+2'], 'O3': ['2+2'], 'O5': ['2'], 'P2': ['2'], 'Q13': ['2'], 'R9': ['2+2'], 'R29': ['4'], 'R34': ['4'], 'S1': ['3'], 'S7': ['3', '2'], 'T19': ['4+3'], 'T22': ['4'], 'T24': ['3+2'], 'U8': ['2'], 'U30': ['4'], 'U31': ['2'], 'U32': ['4']
@@ -63,16 +64,14 @@ const App: React.FC = () => {
   const [isExportDropdownOpen, setIsExportDropdownOpen] = useState(false);
   const exportRef = useRef<HTMLDivElement>(null);
 
-  // Pengecekan URL yang lebih aman untuk menghindari error TS2367
+  // Fungsi pengecekan yang aman dari error TS2367
   const isUrlConfigured = () => {
-    const url = GOOGLE_SCRIPT_URL as string;
-    return url && url.startsWith('https://script.google.com') && url.length > 50;
+    return GOOGLE_SCRIPT_URL && GOOGLE_SCRIPT_URL.includes("script.google.com");
   };
 
   // Sync Logic
   const fetchDataFromSheets = async () => {
     if (!isUrlConfigured()) {
-        console.warn("Google Script URL belum dikonfigurasi dengan benar.");
         const localData = localStorage.getItem(STORAGE_KEY);
         if (localData) {
             const parsed = JSON.parse(localData);
@@ -88,7 +87,7 @@ const App: React.FC = () => {
       const response = await fetch(GOOGLE_SCRIPT_URL);
       const parsed = await response.json();
       
-      if (parsed && typeof parsed === 'object' && Object.keys(parsed).length > 0) {
+      if (parsed && typeof parsed === 'object') {
         if (parsed.schedule) {
             setSchedule(parsed.schedule);
             setHistory([JSON.parse(JSON.stringify(parsed.schedule))]);
@@ -212,7 +211,7 @@ const App: React.FC = () => {
           }
       } else {
           setLastSaved(now);
-          alert('Data tersimpan di browser (Lokal).');
+          alert('Data tersimpan secara lokal di browser.');
       }
       setIsSaving(false);
   };
