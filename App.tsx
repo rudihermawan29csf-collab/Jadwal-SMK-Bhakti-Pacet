@@ -366,6 +366,8 @@ const App: React.FC = () => {
   }
 
   const showExport = activeTab === 'SCHEDULE' || activeTab === 'DUTIES' || activeTab === 'EDIT_MANUAL' || activeTab === 'PER_CLASS_TEACHER';
+  
+  // Memastikan tab SCHEDULE, PER_CLASS_TEACHER, dan EDIT_MANUAL ada di daftar
   const availableTabs = userRole === 'ADMIN' 
     ? ['SCHEDULE', 'PER_CLASS_TEACHER', 'EDIT_MANUAL', 'DUTIES', 'OFF_CODES', 'JP_DIST']
     : ['SCHEDULE', 'PER_CLASS_TEACHER', 'DUTIES'];
@@ -473,6 +475,7 @@ const App: React.FC = () => {
       )}
 
       <main className="flex-1 container mx-auto p-4">
+        {/* Tab JADWAL UTAMA */}
         {activeTab === 'SCHEDULE' && schedule && (
             <>
                 {userRole === 'ADMIN' && (
@@ -531,11 +534,31 @@ const App: React.FC = () => {
                 <TeacherDutyTable teachers={teachers} schedule={schedule} mode="countdown" />
             </>
         )}
-        {activeTab === 'PER_CLASS_TEACHER' && schedule && <PerClassTeacherSchedule schedule={schedule} teachers={teachers} userRole={userRole} loggedTeacherId={loggedTeacherId} />}
-        {activeTab === 'EDIT_MANUAL' && schedule && <ManualEditTable schedule={schedule} setSchedule={setScheduleWithHistory} teachers={teachers} filterType={filterType} filterValue={filterValue} jpSplitSettings={jpSplitSettings} />}
-        {activeTab === 'DUTIES' && <TeacherDutyTable teachers={teachers} setTeachers={userRole === 'ADMIN' ? setTeachers : undefined} schedule={null} mode={userRole === 'ADMIN' ? 'static' : 'countdown'} />}
-        {activeTab === 'OFF_CODES' && <OffCodeManager teachers={teachers} constraints={offConstraints} onChange={setOffConstraints} />}
-        {activeTab === 'JP_DIST' && <JPDistributionTable settings={jpSplitSettings} onUpdate={(code, opts) => setJpSplitSettings(prev => ({...prev, [code]: opts}))} />}
+
+        {/* Tab JADWAL PER KELAS/GURU */}
+        {activeTab === 'PER_CLASS_TEACHER' && schedule && (
+            <PerClassTeacherSchedule schedule={schedule} teachers={teachers} userRole={userRole} loggedTeacherId={loggedTeacherId} />
+        )}
+
+        {/* Tab EDIT MANUAL */}
+        {activeTab === 'EDIT_MANUAL' && schedule && (
+            <ManualEditTable schedule={schedule} setSchedule={setScheduleWithHistory} teachers={teachers} filterType={filterType} filterValue={filterValue} jpSplitSettings={jpSplitSettings} />
+        )}
+
+        {/* Tab TUGAS GURU */}
+        {activeTab === 'DUTIES' && (
+            <TeacherDutyTable teachers={teachers} setTeachers={userRole === 'ADMIN' ? setTeachers : undefined} schedule={null} mode={userRole === 'ADMIN' ? 'static' : 'countdown'} />
+        )}
+
+        {/* Tab PENGATURAN HARI LIBUR GURU */}
+        {activeTab === 'OFF_CODES' && (
+            <OffCodeManager teachers={teachers} constraints={offConstraints} onChange={setOffConstraints} />
+        )}
+
+        {/* Tab PENGATURAN PEMBAGIAN JAM */}
+        {activeTab === 'JP_DIST' && (
+            <JPDistributionTable settings={jpSplitSettings} onUpdate={(code, opts) => setJpSplitSettings(prev => ({...prev, [code]: opts}))} />
+        )}
       </main>
       <footer className="bg-white border-t p-4 mt-auto no-print text-center text-[10px] text-gray-400 font-bold tracking-widest uppercase">&copy; 2025 SMK BHAKTI PACET - AUTOMATED SCHEDULER</footer>
     </div>
