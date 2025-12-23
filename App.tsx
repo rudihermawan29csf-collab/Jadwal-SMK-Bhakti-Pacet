@@ -17,9 +17,6 @@ const STORAGE_KEY = 'SMK_BHAKTI_PACET_DATA_V1';
 const LOGO_URL = "https://iili.io/fE4CthG.png";
 const LOGIN_BG_URL = "https://scontent.fsub2-2.fna.fbcdn.net/v/t39.30808-6/481243967_1132369265566430_2047520136138959486_n.jpg?stp=dst-jpg_s960x960_tt6&_nc_cat=102&ccb=1-7&_nc_sid=cc71e4&_nc_ohc=XpI9K8L9024Q7kNvwHZ01Zn&_nc_oc=AdmLx0g_v3DetsCrcvE0bn5BVgR4IsEMCv1P43NwT3aP6B1UJmVTeyF7pLCWijd_UlMQyn3IE4zlPUu0dYv2PXsH&_nc_zt=23&_nc_ht=scontent.fsub2-2.fna&_nc_gid=DC7Pqmrn8_Dnp7iSwc77hQ&oh=00_Afn0d45zoZasyPFNu7wFScX-czBopyGzb1c2TCcOP_yXaQ&oe=69503860";
 
-/**
- * URL Google Script. Menggunakan tipe string eksplisit.
- */
 const GOOGLE_SCRIPT_URL: string = "https://script.google.com/macros/s/AKfycbxAqoNfK_oWuS8qh2DH61E6OLetk3bN2FYnkCLsnG9PeBKVhZaHi32H0p77mmuoLUngIw/exec";
 
 const DEFAULT_JP_SETTINGS: JPSplitConstraints = {
@@ -41,8 +38,20 @@ const App: React.FC = () => {
   const [passwordInput, setPasswordInput] = useState('');
   const [loginError, setLoginError] = useState('');
 
-  // App States
-  const [schedule, setSchedule] = useState<WeeklySchedule | null>(null);
+  // App States - Inisialisasi langsung agar tidak null
+  const [schedule, setSchedule] = useState<WeeklySchedule>(() => {
+      const localData = localStorage.getItem(STORAGE_KEY);
+      if (localData) {
+          try {
+              const parsed = JSON.parse(localData);
+              return parsed.schedule || createEmptySchedule();
+          } catch (e) {
+              return createEmptySchedule();
+          }
+      }
+      return createEmptySchedule();
+  });
+
   const [history, setHistory] = useState<WeeklySchedule[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
 
@@ -63,24 +72,13 @@ const App: React.FC = () => {
   const [isExportDropdownOpen, setIsExportDropdownOpen] = useState(false);
   const exportRef = useRef<HTMLDivElement>(null);
 
-  // Fungsi pengecekan yang aman dari error TS2367
   const isUrlConfigured = () => {
     const url = GOOGLE_SCRIPT_URL as string;
     return url && url.includes("script.google.com");
   };
 
-  // Sync Logic
   const fetchDataFromSheets = async () => {
-    if (!isUrlConfigured()) {
-        const localData = localStorage.getItem(STORAGE_KEY);
-        if (localData) {
-            const parsed = JSON.parse(localData);
-            setSchedule(parsed.schedule || createEmptySchedule());
-        } else {
-            setSchedule(createEmptySchedule());
-        }
-        return;
-    }
+    if (!isUrlConfigured()) return;
 
     setIsLoading(true);
     try {
@@ -98,16 +96,9 @@ const App: React.FC = () => {
         if (parsed.jpSplitSettings) setJpSplitSettings(parsed.jpSplitSettings);
         if (parsed.settings) setSettings(parsed.settings);
         if (parsed.timestamp) setLastSaved(parsed.timestamp);
-      } else {
-        setSchedule(createEmptySchedule());
       }
     } catch (e) {
       console.error("Gagal mengambil data dari Sheets:", e);
-      const localData = localStorage.getItem(STORAGE_KEY);
-      if (localData) {
-          const parsed = JSON.parse(localData);
-          setSchedule(parsed.schedule || createEmptySchedule());
-      }
     } finally {
       setIsLoading(false);
     }
@@ -226,7 +217,6 @@ const App: React.FC = () => {
   }, []);
 
   const getCodeStats = (tId: number, sCode: string, targetLoad: number) => {
-      if (!schedule) return { total: 0, placed: 0 };
       let total = 0, placed = 0;
       const teacher = teachers.find(t => t.id === tId);
       const subject = teacher?.subjects.find(s => s.code === sCode);
@@ -253,7 +243,7 @@ const App: React.FC = () => {
   };
 
   const handleCodeClick = (tId: number, sCode: string, targetLoad: number) => {
-      if (userRole !== 'ADMIN' || !schedule) return;
+      if (userRole !== 'ADMIN') return;
       const nextSchedule = fillScheduleWithCode(schedule, teachers, tId, sCode, offConstraints, jpSplitSettings, targetLoad);
       setScheduleWithHistory(nextSchedule);
   };
@@ -267,7 +257,6 @@ const App: React.FC = () => {
   };
 
   const handleExport = (type: 'EXCEL' | 'PDF_A4' | 'PDF_F4') => {
-      if (!schedule) return;
       if (type === 'EXCEL') exportScheduleExcel(schedule);
       if (type === 'PDF_A4') exportSchedulePDF(schedule, teachers, 'A4');
       if (type === 'PDF_F4') exportSchedulePDF(schedule, teachers, 'F4');
@@ -367,7 +356,6 @@ const App: React.FC = () => {
 
   const showExport = activeTab === 'SCHEDULE' || activeTab === 'DUTIES' || activeTab === 'EDIT_MANUAL' || activeTab === 'PER_CLASS_TEACHER';
   
-  // Memastikan tab SCHEDULE, PER_CLASS_TEACHER, dan EDIT_MANUAL ada di daftar
   const availableTabs = userRole === 'ADMIN' 
     ? ['SCHEDULE', 'PER_CLASS_TEACHER', 'EDIT_MANUAL', 'DUTIES', 'OFF_CODES', 'JP_DIST']
     : ['SCHEDULE', 'PER_CLASS_TEACHER', 'DUTIES'];
@@ -476,7 +464,7 @@ const App: React.FC = () => {
 
       <main className="flex-1 container mx-auto p-4">
         {/* Tab JADWAL UTAMA */}
-        {activeTab === 'SCHEDULE' && schedule && (
+        {activeTab === 'SCHEDULE' && (
             <>
                 {userRole === 'ADMIN' && (
                     <div className="bg-white p-4 shadow rounded-lg mb-6 no-print border-t-4 border-blue-600 animate-fade-in">
@@ -536,12 +524,12 @@ const App: React.FC = () => {
         )}
 
         {/* Tab JADWAL PER KELAS/GURU */}
-        {activeTab === 'PER_CLASS_TEACHER' && schedule && (
+        {activeTab === 'PER_CLASS_TEACHER' && (
             <PerClassTeacherSchedule schedule={schedule} teachers={teachers} userRole={userRole} loggedTeacherId={loggedTeacherId} />
         )}
 
         {/* Tab EDIT MANUAL */}
-        {activeTab === 'EDIT_MANUAL' && schedule && (
+        {activeTab === 'EDIT_MANUAL' && (
             <ManualEditTable schedule={schedule} setSchedule={setScheduleWithHistory} teachers={teachers} filterType={filterType} filterValue={filterValue} jpSplitSettings={jpSplitSettings} />
         )}
 
