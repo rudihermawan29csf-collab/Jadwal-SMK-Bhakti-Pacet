@@ -17,6 +17,9 @@ const STORAGE_KEY = 'SMPN3_PACET_DATA_V1';
 const LOGO_URL = "https://iili.io/fE4CthG.png";
 const LOGIN_BG_URL = "https://scontent.fsub2-2.fna.fbcdn.net/v/t39.30808-6/481243967_1132369265566430_2047520136138959486_n.jpg?stp=dst-jpg_s960x960_tt6&_nc_cat=102&ccb=1-7&_nc_sid=cc71e4&_nc_ohc=XpI9K8L9024Q7kNvwHZ01Zn&_nc_oc=AdmLx0g_v3DetsCrcvE0bn5BVgR4IsEMCv1P43NwT3aP6B1UJmVTeyF7pLCWijd_UlMQyn3IE4zlPUu0dYv2PXsH&_nc_zt=23&_nc_ht=scontent.fsub2-2.fna&_nc_gid=DC7Pqmrn8_Dnp7iSwc77hQ&oh=00_Afn0d45zoZasyPFNu7wFScX-czBopyGzb1c2TCcOP_yXaQ&oe=69503860";
 
+// GANTI URL INI dengan URL Web App dari Google Apps Script Anda
+const GOOGLE_SCRIPT_URL = "https://jadwal-smk-bhakti-pacet.vercel.app/";
+
 const DEFAULT_JP_SETTINGS: JPSplitConstraints = {
     'C4': ['2+2'], 'D3': ['3'], 'E1': ['3'], 'F20': ['4+3', '3+2'], 'F21': ['4+2'], 'F24': ['5'], 'G10': ['2+2'], 'I6': ['2+2'], 'J6': ['2+2'], 'K12': ['2'], 'K5': ['2'], 'L11': ['4+4', '4+3'], 'M16': ['2'], 'M27': ['1'], 'M28': ['1'], 'M33': ['4+4+2'], 'M36': ['4+4+2'], 'M38': ['4+4+2'], 'N11': ['3+2'], 'O3': ['2+2'], 'O5': ['2'], 'P2': ['2'], 'Q13': ['2'], 'R9': ['2+2'], 'R29': ['4'], 'R34': ['4'], 'S1': ['3'], 'S7': ['3', '2'], 'T19': ['4+3'], 'T22': ['4'], 'T24': ['3+2'], 'U8': ['2'], 'U30': ['4'], 'U31': ['2'], 'U32': ['4']
 };
@@ -48,6 +51,9 @@ const App: React.FC = () => {
   const [lastSaved, setLastSaved] = useState<string | null>(null);
   const [settings, setSettings] = useState<AppSettings>({ academicYear: '2025/2026', semester: '2 (Genap)' });
   
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
   const [filterType, setFilterType] = useState<'CLASS' | 'TEACHER'>('CLASS');
   const [filterValue, setFilterValue] = useState<string[]>(['ALL']);
   const [isMultiSelectOpen, setIsMultiSelectOpen] = useState(false);
@@ -55,7 +61,44 @@ const App: React.FC = () => {
   const [isExportDropdownOpen, setIsExportDropdownOpen] = useState(false);
   const exportRef = useRef<HTMLDivElement>(null);
 
-  // Undo / Redo Logic
+  // Sync Logic
+  const fetchDataFromSheets = async () => {
+    if (GOOGLE_SCRIPT_URL === "https://jadwal-smk-bhakti-pacet.vercel.app/") return;
+    setIsLoading(true);
+    try {
+      const response = await fetch(GOOGLE_SCRIPT_URL);
+      const parsed = await response.json();
+      
+      if (parsed && Object.keys(parsed).length > 0) {
+        if (parsed.schedule) {
+            setSchedule(parsed.schedule);
+            setHistory([JSON.parse(JSON.stringify(parsed.schedule))]);
+            setHistoryIndex(0);
+        }
+        if (parsed.teachers) setTeachers(parsed.teachers);
+        if (parsed.offConstraints) setOffConstraints(parsed.offConstraints);
+        if (parsed.jpSplitSettings) setJpSplitSettings(parsed.jpSplitSettings);
+        if (parsed.settings) setSettings(parsed.settings);
+        if (parsed.timestamp) setLastSaved(parsed.timestamp);
+      } else {
+        const empty = createEmptySchedule();
+        setSchedule(empty);
+        setHistory([JSON.parse(JSON.stringify(empty))]);
+        setHistoryIndex(0);
+      }
+    } catch (e) {
+      console.error("Gagal mengambil data:", e);
+      // Fallback ke localStorage jika koneksi gagal
+      const localData = localStorage.getItem(STORAGE_KEY);
+      if (localData) {
+          const parsed = JSON.parse(localData);
+          setSchedule(parsed.schedule);
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const setScheduleWithHistory = (newSchedule: WeeklySchedule, forceResetHistory = false) => {
     const cloned = JSON.parse(JSON.stringify(newSchedule));
     if (forceResetHistory) {
@@ -88,36 +131,7 @@ const App: React.FC = () => {
   };
 
   useEffect(() => {
-    const savedData = localStorage.getItem(STORAGE_KEY);
-    if (savedData) {
-        try {
-            const parsed = JSON.parse(savedData);
-            const initialSchedule = parsed.schedule || createEmptySchedule();
-            setSchedule(initialSchedule);
-            setHistory([JSON.parse(JSON.stringify(initialSchedule))]);
-            setHistoryIndex(0);
-
-            if (parsed.teachers) setTeachers(parsed.teachers);
-            if (parsed.offConstraints) setOffConstraints(parsed.offConstraints);
-            if (parsed.jpSplitSettings) setJpSplitSettings(parsed.jpSplitSettings);
-            if (parsed.settings) setSettings(parsed.settings);
-            if (parsed.timestamp) setLastSaved(parsed.timestamp);
-        } catch (e) {
-            const empty = createEmptySchedule();
-            setSchedule(empty);
-            setHistory([JSON.parse(JSON.stringify(empty))]);
-            setHistoryIndex(0);
-            setTeachers(getInitialTeachers());
-            setJpSplitSettings(DEFAULT_JP_SETTINGS);
-        }
-    } else {
-        const empty = createEmptySchedule();
-        setSchedule(empty);
-        setHistory([JSON.parse(JSON.stringify(empty))]);
-        setHistoryIndex(0);
-        setTeachers(getInitialTeachers());
-        setJpSplitSettings(DEFAULT_JP_SETTINGS);
-    }
+    fetchDataFromSheets();
   }, []);
 
   const handleLogin = (e: React.FormEvent) => {
@@ -159,13 +173,34 @@ const App: React.FC = () => {
       setLoginError('');
   };
 
-  const handleSaveData = () => {
+  const handleSaveData = async () => {
       if (userRole !== 'ADMIN') return;
+      setIsSaving(true);
       const now = new Date().toLocaleString('id-ID');
       const dataToSave = { schedule, teachers, offConstraints, jpSplitSettings, settings, timestamp: now };
+      
+      // Simpan ke LocalStorage sebagai backup
       localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
-      setLastSaved(now);
-      alert('Data berhasil disimpan!');
+
+      // Simpan ke Google Sheets
+      if (GOOGLE_SCRIPT_URL !== "https://script.google.com/macros/s/AKfycbxAqoNfK_oWuS8qh2DH61E6OLetk3bN2FYnkCLsnG9PeBKVhZaHi32H0p77mmuoLUngIw/exec") {
+          try {
+              await fetch(GOOGLE_SCRIPT_URL, {
+                  method: 'POST',
+                  mode: 'no-cors', // Penting untuk Apps Script
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(dataToSave)
+              });
+              setLastSaved(now);
+              alert('Data berhasil disinkronkan ke Google Sheets!');
+          } catch (e) {
+              alert('Gagal sinkronisasi, data hanya tersimpan di browser ini.');
+          }
+      } else {
+          setLastSaved(now);
+          alert('Data tersimpan di browser (URL Google Sheets belum diset).');
+      }
+      setIsSaving(false);
   };
 
   useEffect(() => {
@@ -232,7 +267,6 @@ const App: React.FC = () => {
             className="min-h-screen w-full flex items-center justify-center p-4 bg-cover bg-center bg-no-repeat relative overflow-hidden"
             style={{ backgroundImage: `url(${LOGIN_BG_URL})` }}
           >
-              {/* Overlay for readability */}
               <div className="absolute inset-0 bg-blue-900/40 backdrop-blur-[2px]"></div>
 
               <div className="relative z-10 bg-white/90 backdrop-blur-xl rounded-[2.5rem] shadow-2xl w-full max-w-md overflow-hidden animate-fade-in border border-white/40 ring-1 ring-black/5">
@@ -344,7 +378,11 @@ const App: React.FC = () => {
                             <span className="text-[10px] text-blue-300 font-bold uppercase">Semester:</span>
                             <span className="text-xs text-white font-bold uppercase">{settings.semester}</span>
                         </div>
-                        {lastSaved && <span className="text-[9px] font-black bg-blue-700/50 px-2 py-0.5 rounded text-blue-200 uppercase flex items-center">SAVED: {lastSaved}</span>}
+                        {isLoading ? (
+                            <span className="text-[9px] font-black bg-blue-700/50 px-2 py-0.5 rounded text-blue-200 uppercase flex items-center animate-pulse">Syncing...</span>
+                        ) : lastSaved && (
+                            <span className="text-[9px] font-black bg-blue-700/50 px-2 py-0.5 rounded text-blue-200 uppercase flex items-center">SAVED: {lastSaved}</span>
+                        )}
                     </div>
                 </div>
             </div>
@@ -354,7 +392,13 @@ const App: React.FC = () => {
                     <span className="text-[10px] font-bold text-white mt-0.5 max-w-[150px] truncate">{loggedTeacherName}</span>
                 </div>
                 {userRole === 'ADMIN' && (
-                    <button onClick={handleSaveData} className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded shadow transition text-sm font-bold">SIMPAN</button>
+                    <button 
+                        onClick={handleSaveData} 
+                        disabled={isSaving}
+                        className={`${isSaving ? 'bg-orange-300' : 'bg-orange-500 hover:bg-orange-600'} text-white px-4 py-2 rounded shadow transition text-sm font-bold flex items-center gap-2`}
+                    >
+                        {isSaving ? 'MENYIMPAN...' : 'SIMPAN & SYNC'}
+                    </button>
                 )}
                 {showExport && (
                     <div className="relative" ref={exportRef}>
@@ -372,6 +416,16 @@ const App: React.FC = () => {
             </div>
         </div>
       </header>
+
+      {/* Loading Overlay */}
+      {isLoading && (
+          <div className="fixed inset-0 bg-white/60 z-[99] flex items-center justify-center backdrop-blur-sm">
+              <div className="bg-blue-900 text-white p-6 rounded-3xl shadow-2xl flex flex-col items-center gap-4 animate-bounce">
+                  <div className="w-12 h-12 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
+                  <span className="font-black uppercase tracking-widest text-xs">Menyinkronkan Data...</span>
+              </div>
+          </div>
+      )}
 
       <div className="bg-white border-b border-gray-200 shadow-sm no-print sticky top-[72px] z-20">
         <div className="container mx-auto flex overflow-x-auto">
