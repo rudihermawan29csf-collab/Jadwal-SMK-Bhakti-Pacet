@@ -18,10 +18,9 @@ const LOGO_URL = "https://iili.io/fE4CthG.png";
 const LOGIN_BG_URL = "https://scontent.fsub2-2.fna.fbcdn.net/v/t39.30808-6/481243967_1132369265566430_2047520136138959486_n.jpg?stp=dst-jpg_s960x960_tt6&_nc_cat=102&ccb=1-7&_nc_sid=cc71e4&_nc_ohc=XpI9K8L9024Q7kNvwHZ01Zn&_nc_oc=AdmLx0g_v3DetsCrcvE0bn5BVgR4IsEMCv1P43NwT3aP6B1UJmVTeyF7pLCWijd_UlMQyn3IE4zlPUu0dYv2PXsH&_nc_zt=23&_nc_ht=scontent.fsub2-2.fna&_nc_gid=DC7Pqmrn8_Dnp7iSwc77hQ&oh=00_Afn0d45zoZasyPFNu7wFScX-czBopyGzb1c2TCcOP_yXaQ&oe=69503860";
 
 /**
- * PENTING: Ganti URL di bawah ini dengan URL "Web App" yang Anda dapatkan 
- * setelah melakukan Deploy di Google Apps Script (biasanya berakhir dengan /exec).
+ * URL Google Script yang sudah diperbarui.
  */
-const GOOGLE_SCRIPT_URL: string = "MASUKKAN_URL_GOOGLE_SCRIPT_ANDA_DI_SINI";
+const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxAqoNfK_oWuS8qh2DH61E6OLetk3bN2FYnkCLsnG9PeBKVhZaHi32H0p77mmuoLUngIw/exec";
 
 const DEFAULT_JP_SETTINGS: JPSplitConstraints = {
     'C4': ['2+2'], 'D3': ['3'], 'E1': ['3'], 'F20': ['4+3', '3+2'], 'F21': ['4+2'], 'F24': ['5'], 'G10': ['2+2'], 'I6': ['2+2'], 'J6': ['2+2'], 'K12': ['2'], 'K5': ['2'], 'L11': ['4+4', '4+3'], 'M16': ['2'], 'M27': ['1'], 'M28': ['1'], 'M33': ['4+4+2'], 'M36': ['4+4+2'], 'M38': ['4+4+2'], 'N11': ['3+2'], 'O3': ['2+2'], 'O5': ['2'], 'P2': ['2'], 'Q13': ['2'], 'R9': ['2+2'], 'R29': ['4'], 'R34': ['4'], 'S1': ['3'], 'S7': ['3', '2'], 'T19': ['4+3'], 'T22': ['4'], 'T24': ['3+2'], 'U8': ['2'], 'U30': ['4'], 'U31': ['2'], 'U32': ['4']
@@ -64,11 +63,16 @@ const App: React.FC = () => {
   const [isExportDropdownOpen, setIsExportDropdownOpen] = useState(false);
   const exportRef = useRef<HTMLDivElement>(null);
 
+  // Pengecekan URL yang lebih aman untuk menghindari error TS2367
+  const isUrlConfigured = () => {
+    const url = GOOGLE_SCRIPT_URL as string;
+    return url && url.startsWith('https://script.google.com') && url.length > 50;
+  };
+
   // Sync Logic
   const fetchDataFromSheets = async () => {
-    // Cek apakah URL masih menggunakan placeholder bawaan
-    if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL.includes("MASUKKAN_URL")) {
-        console.warn("Google Script URL belum dikonfigurasi.");
+    if (!isUrlConfigured()) {
+        console.warn("Google Script URL belum dikonfigurasi dengan benar.");
         const localData = localStorage.getItem(STORAGE_KEY);
         if (localData) {
             const parsed = JSON.parse(localData);
@@ -84,7 +88,7 @@ const App: React.FC = () => {
       const response = await fetch(GOOGLE_SCRIPT_URL);
       const parsed = await response.json();
       
-      if (parsed && Object.keys(parsed).length > 0) {
+      if (parsed && typeof parsed === 'object' && Object.keys(parsed).length > 0) {
         if (parsed.schedule) {
             setSchedule(parsed.schedule);
             setHistory([JSON.parse(JSON.stringify(parsed.schedule))]);
@@ -190,13 +194,10 @@ const App: React.FC = () => {
       const now = new Date().toLocaleString('id-ID');
       const dataToSave = { schedule, teachers, offConstraints, jpSplitSettings, settings, timestamp: now };
       
-      // Simpan ke LocalStorage sebagai backup
       localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
 
-      // Simpan ke Google Sheets jika URL sudah benar
-      if (GOOGLE_SCRIPT_URL && !GOOGLE_SCRIPT_URL.includes("MASUKKAN_URL")) {
+      if (isUrlConfigured()) {
           try {
-              // Menggunakan mode 'no-cors' karena Apps Script sering bermasalah dengan CORS preflight
               await fetch(GOOGLE_SCRIPT_URL, {
                   method: 'POST',
                   mode: 'no-cors', 
@@ -207,11 +208,11 @@ const App: React.FC = () => {
               alert('Data berhasil disinkronkan ke Google Sheets!');
           } catch (e) {
               console.error("Sync Error:", e);
-              alert('Gagal sinkronisasi ke awan, data hanya tersimpan di browser ini.');
+              alert('Gagal sinkronisasi ke cloud, data hanya tersimpan di browser ini.');
           }
       } else {
           setLastSaved(now);
-          alert('Data tersimpan di browser (Lupa set URL Google Sheets?).');
+          alert('Data tersimpan di browser (Lokal).');
       }
       setIsSaving(false);
   };
